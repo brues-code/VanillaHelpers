@@ -417,13 +417,6 @@ static int __fastcall Script_SetUnitBlip(void *L) {
         return 0;
     }
 
-    auto *playerptr = reinterpret_cast<Game::CGUnit_C *>(Game::ClntObjMgrObjectPtr(
-        Game::TYPE_MASK::TYPEMASK_PLAYER, nullptr, Game::ClntObjMgrGetActivePlayer(), 0));
-    if (!Game::CGUnit_C_CanAssist(playerptr, unitptr)) {
-        Game::Lua::Error(L, "Unit is not friendly.");
-        return 0;
-    }
-
     std::string texturePath = Game::Lua::ToString(L, 2);
     std::transform(texturePath.begin(), texturePath.end(), texturePath.begin(), ::tolower);
 
