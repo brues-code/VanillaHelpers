@@ -63,6 +63,8 @@ static bool g_hooksInstalled = false;
 static std::unordered_map<std::string, Game::HTEXTURE__ *> g_textureCache;
 static std::unordered_map<uint64_t, Blip> g_trackedUnitBlips;
 static std::unordered_map<std::string, std::unordered_set<uint64_t>> g_unitTokenGuids;
+static std::unordered_map<std::string, std::unordered_set<uint64_t>> g_ownerGuids;
+static std::unordered_map<uint64_t, std::unordered_set<std::string>> g_guidOwners;
 static std::unordered_map<uint32_t, Blip> g_trackedUnitFlagsBlips;
 static std::unordered_map<uint32_t, Blip> g_trackedGameObjectTypesBlips;
 static std::vector<TrackedObjectData> g_trackedObjectsData;
@@ -439,6 +441,38 @@ static int __fastcall Script_SetUnitBlip(void *L) {
     std::transform(tokenKey.begin(), tokenKey.end(), tokenKey.begin(), ::tolower);
     g_unitTokenGuids[tokenKey].insert(unitGUID);
 
+    if (Game::Lua::IsString(L, 4)) {
+        std::string ownerKey = Game::Lua::ToString(L, 4);
+        std::transform(ownerKey.begin(), ownerKey.end(), ownerKey.begin(), ::tolower);
+        g_ownerGuids[ownerKey].insert(unitGUID);
+        g_guidOwners[unitGUID].insert(ownerKey);
+    }
+
+    return 0;
+}
+
+static int __fastcall Script_ClearUnitBlipsByOwner(void *L) {
+    if (!Game::Lua::IsString(L, 1)) {
+        Game::Lua::Error(L, "Usage: ClearUnitBlipsByOwner(ownerID)");
+        return 0;
+    }
+
+    std::string ownerKey = Game::Lua::ToString(L, 1);
+    std::transform(ownerKey.begin(), ownerKey.end(), ownerKey.begin(), ::tolower);
+
+    const auto it = g_ownerGuids.find(ownerKey);
+    if (it != g_ownerGuids.end()) {
+        for (uint64_t guid : it->second) {
+            auto &owners = g_guidOwners[guid];
+            owners.erase(ownerKey);
+            if (owners.empty()) {
+                g_trackedUnitBlips.erase(guid);
+                g_guidOwners.erase(guid);
+            }
+        }
+        g_ownerGuids.erase(it);
+    }
+
     return 0;
 }
 
@@ -511,6 +545,8 @@ static int __fastcall Script_ClearUnitBlips(void *L) {
     if (!Game::Lua::IsString(L, 1)) {
         g_trackedUnitBlips.clear();
         g_unitTokenGuids.clear();
+        g_ownerGuids.clear();
+        g_guidOwners.clear();
         return 0;
     }
 
@@ -521,6 +557,13 @@ static int __fastcall Script_ClearUnitBlips(void *L) {
     if (it != g_unitTokenGuids.end()) {
         for (uint64_t guid : it->second) {
             g_trackedUnitBlips.erase(guid);
+            const auto ownersIt = g_guidOwners.find(guid);
+            if (ownersIt != g_guidOwners.end()) {
+                for (const auto &ownerKey : ownersIt->second) {
+                    g_ownerGuids[ownerKey].erase(guid);
+                }
+                g_guidOwners.erase(ownersIt);
+            }
         }
         g_unitTokenGuids.erase(it);
     }
@@ -535,11 +578,15 @@ void RegisterLuaFunctions() {
                                        reinterpret_cast<uintptr_t>(&Script_SetObjectTypeBlip));
     Game::FrameScript_RegisterFunction("ClearUnitBlips",
                                        reinterpret_cast<uintptr_t>(&Script_ClearUnitBlips));
+    Game::FrameScript_RegisterFunction("ClearUnitBlipsByOwner",
+                                       reinterpret_cast<uintptr_t>(&Script_ClearUnitBlipsByOwner));
 }
 
 void Reset() {
     g_trackedUnitBlips.clear();
     g_unitTokenGuids.clear();
+    g_ownerGuids.clear();
+    g_guidOwners.clear();
     g_trackedUnitFlagsBlips.clear();
     g_trackedGameObjectTypesBlips.clear();
     g_trackedObjectsData.clear();
