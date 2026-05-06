@@ -71,9 +71,11 @@ static BlipHoverState g_blipHoverState;
 static const std::unordered_map<std::string, uint32_t> g_stringToFlag = {
     {"auctioneer", Game::UNIT_NPC_FLAG_AUCTIONEER},
     {"banker", Game::UNIT_NPC_FLAG_BANKER},
+    {"battlemaster", Game::UNIT_NPC_FLAG_BATTLEMASTER},
     {"flight master", Game::UNIT_NPC_FLAG_FLIGHTMASTER},
     {"innkeeper", Game::UNIT_NPC_FLAG_INNKEEPER},
     {"repair", Game::UNIT_NPC_FLAG_REPAIR},
+    {"stable master", Game::UNIT_NPC_FLAG_STABLEMASTER},
     {"summoning ritual unit", Game::UNIT_NPC_FLAG_SUMMONING_RITUAL},
     {"trainer", Game::UNIT_NPC_FLAG_TRAINER},
     {"vendor", Game::UNIT_NPC_FLAG_VENDOR}};
@@ -470,8 +472,9 @@ static int __fastcall Script_SetObjectTypeBlip(void *L) {
         }
 
         Game::Lua::Error(L, "Unknown object type. Supported types: Auctioneer, Banker, "
-                            "Brainwashing, Flight Master, Innkeeper, Mailbox, Repair, Summoning "
-                            "Ritual Object, Summoning Ritual Unit, Trainer, Vendor.");
+                            "Battlemaster, Brainwashing, Flight Master, Innkeeper, Mailbox, "
+                            "Repair, Stable Master, Summoning Ritual Object, Summoning Ritual "
+                            "Unit, Trainer, Vendor.");
         return 0;
     }
 
@@ -505,9 +508,9 @@ static int __fastcall Script_SetObjectTypeBlip(void *L) {
         return 0;
     }
 
-    Game::Lua::Error(L, "Unknown object type. Supported types: Auctioneer, Banker, Brainwashing, "
-                        "Flight Master, Innkeeper, Mailbox, Repair, Summoning Ritual Object, "
-                        "Summoning Ritual Unit, Trainer, Vendor.");
+    Game::Lua::Error(L, "Unknown object type. Supported types: Auctioneer, Banker, Battlemaster, "
+                        "Brainwashing, Flight Master, Innkeeper, Mailbox, Repair, Stable Master, "
+                        "Summoning Ritual Object, Summoning Ritual Unit, Trainer, Vendor.");
     return 0;
 }
 
