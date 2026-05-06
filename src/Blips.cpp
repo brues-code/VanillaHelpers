@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace Blips {
@@ -61,6 +62,7 @@ struct BlipHoverState {
 static bool g_hooksInstalled = false;
 static std::unordered_map<std::string, Game::HTEXTURE__ *> g_textureCache;
 static std::unordered_map<uint64_t, Blip> g_trackedUnitBlips;
+static std::unordered_map<std::string, std::unordered_set<uint64_t>> g_unitTokenGuids;
 static std::unordered_map<uint32_t, Blip> g_trackedUnitFlagsBlips;
 static std::unordered_map<uint32_t, Blip> g_trackedGameObjectTypesBlips;
 static std::vector<TrackedObjectData> g_trackedObjectsData;
@@ -438,6 +440,10 @@ static int __fastcall Script_SetUnitBlip(void *L) {
 
     g_trackedUnitBlips[unitGUID] = {texture, scale};
 
+    std::string tokenKey = unitToken;
+    std::transform(tokenKey.begin(), tokenKey.end(), tokenKey.begin(), ::tolower);
+    g_unitTokenGuids[tokenKey].insert(unitGUID);
+
     return 0;
 }
 
@@ -505,15 +511,39 @@ static int __fastcall Script_SetObjectTypeBlip(void *L) {
     return 0;
 }
 
+static int __fastcall Script_ClearUnitBlips(void *L) {
+    if (!Game::Lua::IsString(L, 1)) {
+        g_trackedUnitBlips.clear();
+        g_unitTokenGuids.clear();
+        return 0;
+    }
+
+    std::string tokenKey = Game::Lua::ToString(L, 1);
+    std::transform(tokenKey.begin(), tokenKey.end(), tokenKey.begin(), ::tolower);
+
+    const auto it = g_unitTokenGuids.find(tokenKey);
+    if (it != g_unitTokenGuids.end()) {
+        for (uint64_t guid : it->second) {
+            g_trackedUnitBlips.erase(guid);
+        }
+        g_unitTokenGuids.erase(it);
+    }
+
+    return 0;
+}
+
 void RegisterLuaFunctions() {
     Game::FrameScript_RegisterFunction("SetUnitBlip",
                                        reinterpret_cast<uintptr_t>(&Script_SetUnitBlip));
     Game::FrameScript_RegisterFunction("SetObjectTypeBlip",
                                        reinterpret_cast<uintptr_t>(&Script_SetObjectTypeBlip));
+    Game::FrameScript_RegisterFunction("ClearUnitBlips",
+                                       reinterpret_cast<uintptr_t>(&Script_ClearUnitBlips));
 }
 
 void Reset() {
     g_trackedUnitBlips.clear();
+    g_unitTokenGuids.clear();
     g_trackedUnitFlagsBlips.clear();
     g_trackedGameObjectTypesBlips.clear();
     g_trackedObjectsData.clear();
