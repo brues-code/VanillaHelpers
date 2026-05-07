@@ -31,8 +31,10 @@ The library registers these Lua functions:
 ```lua
 WriteFile(filename, mode, content)
 content = ReadFile(filename)
-SetUnitBlip(unit [, texture [, scale]])
+SetUnitBlip(unit [, texture [, scale [, ownerID]]])
 SetObjectTypeBlip(type [, texture [, scale]])
+ClearUnitBlips([unit])
+ClearUnitBlipsByOwner(ownerID)
 SetUnitDisplayID(unitToken [, displayID])
 RemapDisplayID(oldDisplayID(s) [, newDisplayID])
 SetUnitMountDisplayID(unitToken [, mountDisplayID])
@@ -42,6 +44,32 @@ RemapVisibleItemID(oldItemID(s), inventorySlot [, newItemID])
 displayID, nativeDisplayID, mountDisplayID = UnitDisplayInfo(unitToken)
 itemDisplayID = GetItemDisplayID(itemID)
 ```
+
+### Minimap Blips
+
+`SetUnitBlip(unit, texture, scale, ownerID)` places a custom blip on a specific unit by name or unit token. Omitting `texture` removes the blip. The optional `ownerID` string tags the blip so it can be bulk-removed later via `ClearUnitBlipsByOwner`.
+
+`SetObjectTypeBlip(type, texture, scale)` places a blip on all visible objects/NPCs of a given category. Omitting `texture` removes the blip for that type. Supported type strings (case-insensitive):
+
+| Type | Tracks |
+|------|--------|
+| `Auctioneer` | NPC auctioneer flag |
+| `Banker` | NPC banker flag |
+| `Battlemaster` | NPC battlemaster flag |
+| `Flight Master` | NPC flight master flag |
+| `Innkeeper` | NPC innkeeper flag |
+| `Repair` | NPC repair flag |
+| `Stable Master` | NPC stable master flag |
+| `Trainer` | NPC trainer flag |
+| `Vendor` | NPC vendor flag |
+| `Summoning Ritual Unit` | NPC summoning ritual flag |
+| `Mailbox` | Mailbox game objects |
+| `Summoning Ritual Object` | Summoning ritual game objects |
+| `Brainwashing` | Goblin Brainwashing Device (display ID 6424) |
+
+`ClearUnitBlips()` removes all active unit blips. `ClearUnitBlips(unit)` removes only blips registered for that unit token.
+
+`ClearUnitBlipsByOwner(ownerID)` removes all blips that were registered with the given `ownerID`.
 
 To enable higher-resolution character skins, add a text file at VanillaHelpers/ResizeCharacterSkin.txt inside your MPQ. The file should contain a single number: 2 or 4 (the scale multiplier).
 
